@@ -45,7 +45,7 @@ expect "the message carries the sender" 'grep -qF "from: alpha" "$(only_message)
 setup
 send gamma alpha 'for a project never seen'
 expect "send to an unknown project still leaves the message" '[ "$status" -eq 0 ] && [ "$(count_messages)" -eq 1 ]'
-expect "send to an unknown project warns" 'grep -qF "gamma" <<< "$output" && grep -qiF "no Claude session" <<< "$output"'
+expect "send to an unknown project warns" 'grep -qiF "no Claude session has ever been opened on a project named '"'gamma'"'" <<< "$output"'
 
 setup
 send beta alpha 'for a known project'
@@ -53,7 +53,7 @@ expect "send to a known project does not warn" '! grep -qiF "no Claude session" 
 
 setup
 send ../beta alpha 'off the road'
-expect "a name with a slash is refused" '[ "$status" -ne 0 ] && [ "$(count_messages)" -eq 0 ]'
+expect "a name with a slash is refused" '[ "$status" -ne 0 ] && [ -z "$(find "$root" -type f -name "*.md")" ]'
 
 setup
 send beta alpha ''
@@ -75,9 +75,9 @@ expect "the context names the message file" 'context | grep -qF "$message"'
 expect "check does not consume the message" '[ -f "$message" ]'
 
 setup
-send alpha beta 'one'
+send alpha beta 'for-alpha'
 check_from "$root/projects/alpha/sub"
-expect "a subdirectory of a repo reads the repo's inbox" 'context | grep -qF one'
+expect "a subdirectory of a repo reads the repo's inbox" 'context | grep -qF for-alpha'
 
 setup
 send beta alpha 'for-beta'
@@ -102,6 +102,14 @@ send alpha beta 'old but delivered'
 touch -d '8 days ago' "$(only_message)"
 check_from "$root/projects/alpha"
 expect "own old messages are delivered, not reported as stale" 'context | grep -qF "old but delivered" && ! context | grep -qiF "older than a week"'
+
+setup
+send alpha beta 'for-alpha'
+send beta alpha 'old'
+touch -d '8 days ago' "$CLAUDE_INBOX_DIR"/beta/*.md
+check_from "$root/projects/alpha"
+expect "deliveries and stale report come together" 'context | grep -qF for-alpha && context | grep -qiF "older than a week"'
+expect "a blank line separates the stale report from the deliveries" '[ -z "$(context | grep -B1 -iF "older than a week" | head -n 1)" ]'
 
 echo
 if [ "$failures" -gt 0 ]; then
