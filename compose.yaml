@@ -1,0 +1,6 @@
+services:
+  test:
+    build: docker/test
+    volumes:
+      - .:/repo:ro
+    command: bash hooks/test-inbox.sh
