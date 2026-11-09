@@ -30,8 +30,8 @@ description: Sends a message to the Claude session of another of the user's proj
    want to lose the thread they can open a session on that project right away. If `send`
    warns that no session was ever opened on that name, pass it on: the name may be wrong.
    Delivery is done by the SessionStart hook `inbox.sh check`, which also reports messages
-   waiting for more than a week; a message is consumed when the receiving session deletes
-   its file.
+   waiting for more than a week; a message is consumed when the receiving session runs
+   `inbox.sh consume` on its file.
 
 If writing fails with "read-only", the inbox folder (`~/.local/state/claude-inbox`) is missing
 from `sandbox.filesystem.allowWrite`: tell the user, don't leave the sandbox.

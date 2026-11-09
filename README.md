@@ -23,7 +23,9 @@ installed: it's a few lines of bash and one skill.
   `~/.local/state/claude-inbox/<project>/`, one Markdown file per message.
 - **`hooks/inbox.sh check`** — the SessionStart hook: injects the waiting messages into the
   new session, marked as coming from another session and not from the user. The session
-  handles them and deletes their files.
+  handles them and consumes them.
+- **`hooks/inbox.sh consume <file>`** — deletes a message once handled or discarded, and
+  nothing else: it refuses any file that is not a message in the inbox.
 
 A project is named after the root folder of its git repo, the same name `ListAgents` gives
 to its sessions. Two safety nets for wrong names: `send` warns if no Claude session was ever

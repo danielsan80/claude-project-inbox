@@ -111,6 +111,37 @@ check_from "$root/projects/alpha"
 expect "deliveries and stale report come together" 'context | grep -qF for-alpha && context | grep -qiF "older than a week"'
 expect "a blank line separates the stale report from the deliveries" '[ -z "$(context | grep -B1 -iF "older than a week" | head -n 1)" ]'
 
+setup
+send beta alpha 'to consume'
+message="$output"
+check_from "$root/projects/beta"
+expect "the context says to consume with inbox.sh consume" 'context | grep -qF "inbox.sh consume"'
+run "$INBOX" consume "$message"
+expect "consume succeeds" '[ "$status" -eq 0 ]'
+expect "consume removes the message" '[ ! -e "$message" ]'
+
+setup
+outside="$root/projects/beta/notes.md"
+echo keep > "$outside"
+run "$INBOX" consume "$outside"
+expect "consume refuses a file outside the inbox" '[ "$status" -ne 0 ] && [ -f "$outside" ]'
+
+setup
+send beta alpha 'on the way'
+echo keep > "$root/projects/beta/notes.md"
+run "$INBOX" consume "$CLAUDE_INBOX_DIR/beta/../../projects/beta/notes.md"
+expect "consume refuses a path that climbs out of the inbox" '[ "$status" -ne 0 ] && [ -f "$root/projects/beta/notes.md" ]'
+
+setup
+mkdir -p "$CLAUDE_INBOX_DIR"
+echo 2026-01-01 > "$CLAUDE_INBOX_DIR/.stale-reported"
+run "$INBOX" consume "$CLAUDE_INBOX_DIR/.stale-reported"
+expect "consume refuses a file that is not a message" '[ "$status" -ne 0 ] && [ -f "$CLAUDE_INBOX_DIR/.stale-reported" ]'
+
+setup
+run "$INBOX" consume "$CLAUDE_INBOX_DIR/beta/missing.md"
+expect "consume of a missing message fails" '[ "$status" -ne 0 ]'
+
 echo
 if [ "$failures" -gt 0 ]; then
     echo "$failures failure(s)"
